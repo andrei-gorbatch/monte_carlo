@@ -72,10 +72,11 @@ class martial(character):
 
 class blaster(character):
     # Child class for AOE blaster characters
-    def __init__(self, name, hp, ac, spell_save_dc, attack_damage, initiative_bonus, saves, healer):
+    def __init__(self, name, hp, ac, spell_save_dc, attack_damage, number_of_targets, initiative_bonus, saves, healer):
         super().__init__(name, hp, ac, initiative_bonus, saves, healer)
         self.spell_save_dc = spell_save_dc
         self.attack_damage = attack_damage
+        self.number_of_targets = number_of_targets
         self.targeted_save = "dex"
 
     def spell_attack(self):

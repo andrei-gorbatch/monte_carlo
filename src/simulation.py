@@ -9,7 +9,7 @@ from classes import martial, blaster
 from utils import calculate_attack_damage, calculate_spell_damage, calculate_group_hp
 from config import monte_carlo_iterations, heroes, monsters
 
-def choose_heal_or_attack_target(character, heroes, monsters):
+def choose_heal_or_attack_target(character, heroes, monsters, number_of_targets=1):
     # Function that chooses whether to heal an ally or attack an enemy, and selects the target
 
     potential_targets = []
@@ -28,21 +28,29 @@ def choose_heal_or_attack_target(character, heroes, monsters):
             if creature.hp==0:
                 potential_targets.append(creature)
                 target_type = "ally"
-    # If heal is False or no allies are at 0hp, choose attack target
+        # Only one target can be healed at a time
+        if len(potential_targets)!=0:
+            targets = random.sample(potential_targets, 1)
+
+    # If heal is False or no allies are at 0hp, choose attack targets
     if len(potential_targets)==0:
         for creature in enemies:
             if creature.hp>0:
                 potential_targets.append(creature)
                 target_type = "enemy"
 
-    # Randomly sellect target among potential targets
-    if len(potential_targets)!=0:
-        target = random.choice(potential_targets)
-    else:
-        target_type = None
-        target = None
+        # Randomly sellect targets among all potential targets
+        if len(potential_targets)!=0:
+            # Character.number_of_targets can be hit at the same time
+            try:
+                targets = random.sample(potential_targets, number_of_targets)
+            except ValueError:
+                targets = potential_targets
+        else:
+            target_type = None
+            targets = None
 
-    return target_type, target
+    return target_type, targets
 
 
 def initialize_combat():
@@ -62,6 +70,26 @@ def initialize_combat():
 
     return heroes, monsters, all_creatures, initiative_dict, monsters_hp, heroes_hp, rounds
 
+def action(character, heroes, monsters):
+    # Function that performs one action for the character
+
+    if character.__class__.__name__ == 'martial':
+        # For martial, each attack is rolled separately for each target
+        for i in range(0, character.number_of_attacks):
+            target_type, targets = choose_heal_or_attack_target(character, heroes, monsters)
+            if targets != None:
+                for target in targets:
+                    target.take_damage_or_status(character.best_action(target_type))
+            if target_type != "enemy":
+                break
+            
+    elif character.__class__.__name__ == 'blaster':
+        # For blaster, roll damage first and then apply to all targets equally
+        target_type, targets = choose_heal_or_attack_target(character, heroes, monsters, character.number_of_targets)
+        if targets != None:
+            best_action = character.best_action(target_type)
+            for target in targets:
+                target.take_damage_or_status(best_action)
 
 def run_one_combat():
     # Function to run one combat
@@ -72,16 +100,7 @@ def run_one_combat():
         rounds=rounds+1
         for character, _ in initiative_dict.items():
             if character.hp>0:
-                if character in heroes:
-                    target_type, target = choose_heal_or_attack_target(character, heroes, monsters)
-                    if target == None:
-                        break
-                    target.take_damage_or_status(character.best_action(target_type))
-                else:
-                    target_type, target = choose_heal_or_attack_target(character, heroes, monsters)
-                    if target == None:
-                        break
-                    target.take_damage_or_status(character.best_action(target_type))
+                action(character, heroes, monsters)
         monsters_hp = calculate_group_hp(monsters)
         heroes_hp = calculate_group_hp(heroes)
 
