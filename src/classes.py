@@ -33,6 +33,8 @@ class character:
         save = random.randint(1, 20) + self.saves[targeted_save]
         if spell_save_dc > save:
             self.hp = max(self.hp - damage, 0)
+        else:
+            self.hp = max(self.hp - int(damage/2), 0)
 
     def take_damage_or_status(self, attack_info):
         """Wrapper function that determines which function to apply based on attack information"""
