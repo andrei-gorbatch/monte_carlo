@@ -7,13 +7,13 @@ import numpy as np
 
 from classes import martial, blaster
 from utils import calculate_group_hp
-from config import monte_carlo_iterations, data_path
+from config import monte_carlo_iterations, input_data_path, output_data_path
 
 
 def ingest_creatures_from_excel() -> dict:
     """Function to ingest heroes and monsters information from excel spreadsheet"""
 
-    input_file = data_path/'character_info.xlsx'
+    input_file = input_data_path/'character_info.xlsx'
     heroes_df = pd.read_excel(input_file, sheet_name="Heroes")
     heroes_df.name = 'heroes'
     monsters_df = pd.read_excel(input_file, sheet_name="Monsters")
@@ -154,32 +154,67 @@ def action(character: any, heroes: list, monsters: list) -> None:
                 target.take_damage_or_status(best_action)
 
 
-def run_one_combat(characters_dict: dict) -> Tuple[int, int, int]:
+def run_one_combat(characters_dict: dict) -> list:
     """Function to run one combat"""
 
     heroes, monsters, initiative_dict, monsters_hp, heroes_hp, rounds = initialize_combat(
         characters_dict)
 
+    first_hero_to_die = None
+    first_monster_to_die = None
+
     while (monsters_hp > 0 and heroes_hp > 0):
-        rounds = rounds+1
+        rounds = rounds + 1
         for character, _ in initiative_dict.items():
             if character.hp > 0:
                 action(character, heroes, monsters)
+            elif (first_hero_to_die is None) and (character in heroes):
+                first_hero_to_die = character.name
+            elif (first_monster_to_die is None) and (character in monsters):
+                first_monster_to_die = character.name
         monsters_hp = calculate_group_hp(monsters)
         heroes_hp = calculate_group_hp(heroes)
 
-    return rounds, heroes_hp, monsters_hp
+    # Generate the stats file entry
+    # Add final health of all creatures
+    column_names = ["rounds", "heroes_hp", "monsters_hp",
+                    "first_hero_to_die", "first_monster_to_die"]
+    combat_stats = [rounds, heroes_hp, monsters_hp,
+                    first_hero_to_die, first_monster_to_die]
+    all_characters = heroes + monsters
+    for character in all_characters:
+        column_names.append(f"{character.name}_hp")
+        combat_stats.append(character.hp)
+
+    return column_names, combat_stats
 
 
 def monte_carlo(characters_dict: dict) -> pd.DataFrame:
     """ Run combat for number of iterations defined in config and save results in a df for futher analysis"""
     data = []
     for i in range(0, monte_carlo_iterations):
-        rounds, heroes_hp, monsters_hp = run_one_combat(characters_dict)
-        data.append([rounds, heroes_hp, monsters_hp])
-    combats_df = pd.DataFrame(
-        columns=['rounds', 'heroes_hp', 'monsters_hp'], data=data)
+        column_names, combat_stats = run_one_combat(characters_dict)
+        data.append(combat_stats)
+    combats_df = pd.DataFrame(columns=column_names, data=data)
+
+    return combats_df
+
+
+def data_analysis(characters_dict: dict, combats_df: pd.DataFrame) -> pd.DataFrame:
+    """ Do data analysis and save results in a csv"""
+
+    heroes = characters_dict['heroes']
+    monsters = characters_dict['monsters']
+
+    hero_hp_cols = []
+    for hero in heroes:
+        hero_hp_cols.append(f"{hero.name}_hp")
+    combats_df['At least one hero died'] = np.where(
+        (combats_df[hero_hp_cols] == 0).any(axis=1), True, False)
+
     combats_df['TPK'] = np.where((combats_df['heroes_hp'] == 0), True, False)
+
+    combats_df.to_csv(output_data_path/"combats_df.csv")
 
     return combats_df
 
@@ -188,8 +223,11 @@ def main():
     """Main"""
     characters_dict = ingest_creatures_from_excel()
     combats_df = monte_carlo(characters_dict)
+    combats_df = data_analysis(characters_dict, combats_df)
     print(
-        f"Ran {monte_carlo_iterations} combats, {combats_df['TPK'].sum()} of them are TPK!")
+        f"Ran {monte_carlo_iterations} combats, {combats_df['TPK'].sum()} of them are TPK.")
+    print(
+        f"In {combats_df['At least one hero died'].sum()/monte_carlo_iterations*100:.1f}% cases, at least one hero died.")
 
 
 if __name__ == "__main__":
