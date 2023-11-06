@@ -5,7 +5,7 @@ from utils import calculate_attack_damage, calculate_spell_damage, calculate_gro
 
 class character:
     # Parent class that is shared between all characters
-    def __init__(self, name, hp, ac, initiative_bonus, saves, healer):
+    def __init__(self, name, hp, ac, initiative_bonus, saves, healer, heal_amount):
         self.name = name
         self.hp = hp
         self.max_hp = hp
@@ -14,6 +14,7 @@ class character:
         self.initiative_bonus = initiative_bonus
         self.initiative = initiative_bonus
         self.healer = healer
+        self.heal_amount = heal_amount
 
     def take_attack_damage(self, attack_roll):
         # function to take damage from an attack
@@ -44,14 +45,14 @@ class character:
 
     def heal(self):
         # Function to roll healing 
-        heal = calculate_spell_damage("1d4+2")
+        heal = calculate_spell_damage(self.heal_amount)
         return heal
 
 
 class martial(character):
     # Child class for martial characters
-    def __init__(self, name, hp, ac, attack_bonus, attack_damage, number_of_attacks, initiative_bonus, saves, healer):
-        super().__init__(name, hp, ac, initiative_bonus, saves, healer)
+    def __init__(self, name, hp, ac, attack_bonus, attack_damage, number_of_attacks, initiative_bonus, saves, healer, heal_amount):
+        super().__init__(name, hp, ac, initiative_bonus, saves, healer, heal_amount)
         self.attack_bonus = int(attack_bonus)
         self.attack_damage = attack_damage
         self.number_of_attacks = int(number_of_attacks)
@@ -72,8 +73,8 @@ class martial(character):
 
 class blaster(character):
     # Child class for AOE blaster characters
-    def __init__(self, name, hp, ac, spell_save_dc, attack_damage, number_of_targets, initiative_bonus, saves, healer, targeted_save):
-        super().__init__(name, hp, ac, initiative_bonus, saves, healer)
+    def __init__(self, name, hp, ac, spell_save_dc, attack_damage, number_of_targets, initiative_bonus, saves, healer, heal_amount, targeted_save):
+        super().__init__(name, hp, ac, initiative_bonus, saves, healer, heal_amount)
         self.spell_save_dc = int(spell_save_dc)
         self.attack_damage = attack_damage
         self.number_of_targets = int(number_of_targets)

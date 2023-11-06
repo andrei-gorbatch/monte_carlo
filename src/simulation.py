@@ -26,10 +26,12 @@ def ingest_creatures_from_excel():
             if row['Type']=="Martial":
                 #TODO: add error handling for missing values, wrong formats, etc.
                 characters.append(martial(name=row['Name'], hp=row['HP'], ac=row['AC'], saves=saves, initiative_bonus=row['initiative_bonus'],
-                                    healer = row['healer'], number_of_attacks=row['number_of_attacks'], attack_bonus=row['attack_bonus'], attack_damage=row['attack_damage']))
+                                    healer = row['healer'], heal_amount=row['heal_amount'],
+                                    number_of_attacks=row['number_of_attacks'], attack_bonus=row['attack_bonus'], attack_damage=row['attack_damage']))
             elif row['Type']=="Blaster":
                 characters.append(blaster(name=row['Name'], hp=row['HP'], ac=row['AC'], saves=saves, initiative_bonus=row['initiative_bonus'],
-                                    healer = row['healer'], number_of_targets=row['number_of_targets'], spell_save_dc=row['spell_save_dc'],
+                                    healer = row['healer'], heal_amount=row['heal_amount'],
+                                    number_of_targets=row['number_of_targets'], spell_save_dc=row['spell_save_dc'],
                                     targeted_save=row['targeted_save'], attack_damage=row['attack_damage']))
             else:
                 print(f"row {index} contains unknown type {row['Type']}, please check.")
@@ -38,7 +40,39 @@ def ingest_creatures_from_excel():
 
     return characters_dict #['heroes'], characters_dict['monsters']
 
-def choose_heal_or_attack_target(character, heroes, monsters, number_of_targets=1):
+def choose_attack_target(character, heroes, monsters, number_of_targets=1):
+    # Function that selects the target for attack
+
+    potential_targets = []
+
+    # Assign allies/enemies based on character
+    if character in heroes:
+        allies = heroes
+        enemies = monsters
+    else:
+        allies = monsters
+        enemies = heroes
+
+    # Choose attack targets
+    for creature in enemies:
+        if creature.hp>0:
+            potential_targets.append(creature)
+            target_type = "enemy"
+
+    # Randomly sellect targets among all potential targets
+    if len(potential_targets)!=0:
+        # Character.number_of_targets can be hit at the same time
+        try:
+            targets = random.sample(potential_targets, number_of_targets)
+        except ValueError:
+            targets = potential_targets
+    else:
+        target_type = None
+        targets = None
+
+    return target_type, targets
+
+def choose_heal_target(character, heroes, monsters):
     # Function that chooses whether to heal an ally or attack an enemy, and selects the target
 
     potential_targets = []
@@ -57,29 +91,14 @@ def choose_heal_or_attack_target(character, heroes, monsters, number_of_targets=
             if creature.hp==0:
                 potential_targets.append(creature)
                 target_type = "ally"
-        # Only one target can be healed at a time
-        if len(potential_targets)!=0:
-            targets = random.sample(potential_targets, 1)
+    # Only one target can be healed at a time
+    if len(potential_targets)!=0:
+        target = random.choice(potential_targets)
+    else:
+        target_type = None
+        target = None
 
-    # If heal is False or no allies are at 0hp, choose attack targets
-    if len(potential_targets)==0:
-        for creature in enemies:
-            if creature.hp>0:
-                potential_targets.append(creature)
-                target_type = "enemy"
-
-        # Randomly sellect targets among all potential targets
-        if len(potential_targets)!=0:
-            # Character.number_of_targets can be hit at the same time
-            try:
-                targets = random.sample(potential_targets, number_of_targets)
-            except ValueError:
-                targets = potential_targets
-        else:
-            target_type = None
-            targets = None
-
-    return target_type, targets
+    return target_type, target
 
 
 def initialize_combat(characters_dict):
@@ -104,10 +123,16 @@ def initialize_combat(characters_dict):
 def action(character, heroes, monsters):
     # Function that performs one action for the character
 
+    # Heal first if needed
+    target_type, target = choose_heal_target(character, heroes, monsters)
+    if target != None:
+        target.take_damage_or_status(character.best_action(target_type))
+
+    #Then do damage 
     if character.__class__.__name__ == 'martial':
         # For martial, each attack is rolled separately for each target
         for i in range(0, character.number_of_attacks):
-            target_type, targets = choose_heal_or_attack_target(character, heroes, monsters)
+            target_type, targets = choose_attack_target(character, heroes, monsters)
             if targets != None:
                 for target in targets:
                     target.take_damage_or_status(character.best_action(target_type))
@@ -116,7 +141,7 @@ def action(character, heroes, monsters):
             
     elif character.__class__.__name__ == 'blaster':
         # For blaster, roll damage first and then apply to all targets equally
-        target_type, targets = choose_heal_or_attack_target(character, heroes, monsters, character.number_of_targets)
+        target_type, targets = choose_attack_target(character, heroes, monsters, character.number_of_targets)
         if targets != None:
             best_action = character.best_action(target_type)
             for target in targets:
