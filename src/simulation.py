@@ -226,7 +226,8 @@ def main():
     combats_df = monte_carlo(characters_dict)
     combats_df = data_analysis(characters_dict, combats_df)
     print(
-        f"Ran {monte_carlo_iterations} combats, {combats_df['TPK'].sum()} of them are TPK.")
+        f"Ran {monte_carlo_iterations} combats.")
+    print(f"In {combats_df['TPK'].sum()/monte_carlo_iterations*100:.1f}% cases, all heroes died.")
     print(
         f"In {combats_df['At least one hero died'].sum()/monte_carlo_iterations*100:.1f}% cases, at least one hero died.")
 
