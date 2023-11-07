@@ -35,7 +35,8 @@ def ingest_creatures_from_excel() -> dict:
                 characters.append(blaster(name=row['Name'], hp=row['HP'], ac=row['AC'], saves=saves, initiative_bonus=row['initiative_bonus'],
                                           healer=row['healer'], heal_amount=row['heal_amount'],
                                           number_of_targets=row['number_of_targets'], spell_save_dc=row['spell_save_dc'],
-                                          targeted_save=row['targeted_save'], attack_damage=row['attack_damage']))
+                                          targeted_save=row['targeted_save'], saved_damage=row['saved_damage'], 
+                                          attack_damage=row['attack_damage']))
             else:
                 print(
                     f"row {index} contains unknown type {row['Type']}, please check.")

@@ -29,12 +29,12 @@ class character:
 
     def take_saving_throw_damage(self, spell_attack):
         """function to take damage from spell attack that requires a saving throw"""
-        targeted_save, spell_save_dc, damage = spell_attack
+        targeted_save, spell_save_dc, saved_damage, damage = spell_attack
         save = random.randint(1, 20) + self.saves[targeted_save]
         if spell_save_dc > save:
             self.hp = max(self.hp - damage, 0)
         else:
-            self.hp = max(self.hp - int(damage/2), 0)
+            self.hp = max(self.hp - int(damage*saved_damage), 0)
 
     def take_damage_or_status(self, attack_info):
         """Wrapper function that determines which function to apply based on attack information"""
@@ -76,17 +76,18 @@ class martial(character):
 
 class blaster(character):
     # Child class for AOE blaster characters
-    def __init__(self, name, hp, ac, spell_save_dc, attack_damage, number_of_targets, initiative_bonus, saves, healer, heal_amount, targeted_save):
+    def __init__(self, name, hp, ac, spell_save_dc, attack_damage, saved_damage, number_of_targets, initiative_bonus, saves, healer, heal_amount, targeted_save):
         super().__init__(name, hp, ac, initiative_bonus, saves, healer, heal_amount)
         self.spell_save_dc = int(spell_save_dc)
         self.attack_damage = attack_damage
+        self.saved_damage = saved_damage
         self.number_of_targets = int(number_of_targets)
         self.targeted_save = targeted_save
 
     def spell_attack(self):
         """Function that outputs required information for an AOE spell attack"""
         damage = calculate_spell_damage(self.attack_damage)
-        return tuple([self.targeted_save, self.spell_save_dc, damage])
+        return tuple([self.targeted_save, self.spell_save_dc, self.saved_damage, damage])
 
     def best_action(self, target_type):
         """Wrapper function that determines which action to take based on target"""
