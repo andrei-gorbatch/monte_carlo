@@ -115,7 +115,7 @@ def initialize_combat(characters_dict: dict) -> Tuple[list, list, dict, int, int
         creature.initiative = random.randint(1, 20) + creature.initiative_bonus
         initiative_dict[creature] = creature.initiative
     initiative_dict = dict(
-        sorted(initiative_dict.items(), key=lambda item: item[1]))
+        sorted(initiative_dict.items(), key=lambda item: item[1], reverse=True))
 
     monsters_hp = calculate_group_hp(monsters)
     heroes_hp = calculate_group_hp(heroes)
