@@ -1,7 +1,7 @@
 # Script that contains class definitions for all characters
 import random
 
-from utils import calculate_attack_damage, calculate_spell_damage, calculate_group_hp
+from utils import calculate_attack_damage, calculate_group_hp
 
 
 class character:
@@ -48,7 +48,7 @@ class character:
 
     def heal(self):
         """Function to roll healing """
-        heal = calculate_spell_damage(self.heal_amount)
+        heal = calculate_attack_damage(self.heal_amount)
         return heal
 
 
@@ -63,7 +63,7 @@ class martial(character):
     def roll_to_attack(self):
         """Function to roll to attack and damage"""
         to_attack = random.randint(1, 20) + self.attack_bonus
-        damage = calculate_attack_damage(to_attack, self.attack_damage)
+        damage = calculate_attack_damage(self.attack_damage, to_attack)
         return tuple([to_attack, damage])
 
     def best_action(self, target_type):
@@ -86,7 +86,7 @@ class blaster(character):
 
     def spell_attack(self):
         """Function that outputs required information for an AOE spell attack"""
-        damage = calculate_spell_damage(self.attack_damage)
+        damage = calculate_attack_damage(self.attack_damage)
         return tuple([self.targeted_save, self.spell_save_dc, self.saved_damage, damage])
 
     def best_action(self, target_type):
