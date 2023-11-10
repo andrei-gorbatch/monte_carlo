@@ -35,7 +35,8 @@ def ingest_creatures_from_excel() -> dict:
                 characters.append(blaster(name=row['Name'], hp=row['HP'], ac=row['AC'], saves=saves, initiative_bonus=row['initiative_bonus'],
                                           healer=row['healer'], heal_amount=row['heal_amount'],
                                           number_of_targets=row['number_of_targets'], spell_save_dc=row['spell_save_dc'],
-                                          targeted_save=row['targeted_save'], attack_damage=row['attack_damage']))
+                                          targeted_save=row['targeted_save'], saved_damage=row['saved_damage'], 
+                                          attack_damage=row['attack_damage']))
             else:
                 print(
                     f"row {index} contains unknown type {row['Type']}, please check.")
@@ -114,7 +115,7 @@ def initialize_combat(characters_dict: dict) -> Tuple[list, list, dict, int, int
         creature.initiative = random.randint(1, 20) + creature.initiative_bonus
         initiative_dict[creature] = creature.initiative
     initiative_dict = dict(
-        sorted(initiative_dict.items(), key=lambda item: item[1]))
+        sorted(initiative_dict.items(), key=lambda item: item[1], reverse=True))
 
     monsters_hp = calculate_group_hp(monsters)
     heroes_hp = calculate_group_hp(heroes)
@@ -225,7 +226,8 @@ def main():
     combats_df = monte_carlo(characters_dict)
     combats_df = data_analysis(characters_dict, combats_df)
     print(
-        f"Ran {monte_carlo_iterations} combats, {combats_df['TPK'].sum()} of them are TPK.")
+        f"Ran {monte_carlo_iterations} combats.")
+    print(f"In {combats_df['TPK'].sum()/monte_carlo_iterations*100:.1f}% cases, all heroes died.")
     print(
         f"In {combats_df['At least one hero died'].sum()/monte_carlo_iterations*100:.1f}% cases, at least one hero died.")
 
