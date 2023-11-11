@@ -4,16 +4,87 @@ import random
 from typing import Tuple
 import pandas as pd
 import numpy as np
+import re
+from pathlib import Path
+import os
 
 from classes import martial, blaster
 from utils import calculate_group_hp
-from config import monte_carlo_iterations, input_data_path, output_data_path
+from config import monte_carlo_iterations, input_data_path, output_data_path, expected_columns, int_columns, must_have_cols, dice_columns, possible_saves, martial_columns, blaster_columns
+
+def validate_dice_cols(col):
+    """Function to validate that the dice columns are in the correct format"""
+    if not col.apply(lambda x: (re.match(r'^[\d\+]*d[\d\+]*(\+[\d\+]*d[\d\+]*)*$', str(x))) is not None or pd.isna(x)).all():
+       raise ValueError(f"Invalid damage: {col}")
+
+def validate_excel_file(input_file: Path = input_data_path/'character_info.xlsx') -> None:
+    """Function to test whether the excel file is in the correct format"""
+
+    if not os.path.exists(input_file):
+        raise ValueError("Input file is missing or incorrectly named.")
+
+    try:
+        heroes_df = pd.read_excel(input_file, sheet_name="Heroes")
+    except:
+        raise ValueError("Heroes sheet is missing or incorrectly named.")
+
+    try:
+        monsters_df = pd.read_excel(input_file, sheet_name="Monsters")
+    except:
+        raise ValueError("Monsters sheet is missing or incorrectly named.")
+
+    all_characters = pd.concat([heroes_df, monsters_df], ignore_index=True)
+
+    if not (all_characters.columns == expected_columns).all():
+        raise ValueError("Columns are missing or incorrectly named.")
+
+    if not (all_characters['Type'].isin(['Martial', 'Blaster'])).all():
+        raise ValueError("Type column contains unknown values.")
+
+    try:
+        all_characters['healer'].isin([True, False])
+    except:
+        raise ValueError("healer column contains unknown values.")
+
+    try:
+        all_characters[int_columns].fillna(-1).astype(int)
+    except:
+        raise ValueError("Integer columns contain unknown values.")
+
+    try:
+        all_characters[dice_columns].apply(validate_dice_cols)
+    except:
+        raise ValueError("heal_amount or attack_damage column contains unknown values.")
+
+    if not (all_characters['targeted_save'].isin(possible_saves) | all_characters['targeted_save'].isna()).all():
+        raise ValueError("targeted_save column contains unknown values.")
+
+    if not (all_characters['saved_damage'].isin([0, 0.5, 1]) | all_characters['saved_damage'].isna()).all():
+        raise ValueError("saved_damage column contains unknown values.")
+
+    # Check that Martial characters have number_of_attacks and attack_bonus
+    martial_characters = all_characters[all_characters['Type'] == 'Martial']
+    if not martial_characters[martial_columns].notna().all().all():
+        raise ValueError("Martial characters are missing number_of_attacks or attack_bonus.")
+    
+    # Check that Blaster characters have number_of_targets, spell_save_dc, targeted_save, saved_damage
+    blaster_characters = all_characters[all_characters['Type'] == 'Blaster']
+    if not blaster_characters[blaster_columns].notna().all().all():
+        raise ValueError("Blaster characters are missing number_of_targets, spell_save_dc, targeted_save, or saved_damage.")
+
+    # Check that Healers have heal_amount
+    healer_characters = all_characters[all_characters['healer'] == True]
+    if not healer_characters['heal_amount'].notna().all():
+        raise ValueError("Healers are missing heal_amount.")
+
+    # Check that all characters have necessary information
+    if not all_characters[must_have_cols].notna().all().all():
+        raise ValueError("Some characters are missing necessary information.")
 
 
-def ingest_creatures_from_excel() -> dict:
+def ingest_creatures_from_excel(input_file: Path = input_data_path/'character_info.xlsx') -> dict:
     """Function to ingest heroes and monsters information from excel spreadsheet"""
 
-    input_file = input_data_path/'character_info.xlsx'
     heroes_df = pd.read_excel(input_file, sheet_name="Heroes")
     heroes_df.name = 'heroes'
     monsters_df = pd.read_excel(input_file, sheet_name="Monsters")
@@ -222,8 +293,13 @@ def data_analysis(characters_dict: dict, combats_df: pd.DataFrame) -> pd.DataFra
 
 def main():
     """Main"""
+    # Test excel format
+    validate_excel_file()
+    # Ingest heroes and monsters from excel
     characters_dict = ingest_creatures_from_excel()
+    # Run Monte-Carlo simulation
     combats_df = monte_carlo(characters_dict)
+    # Do data analysis
     combats_df = data_analysis(characters_dict, combats_df)
     print(
         f"Ran {monte_carlo_iterations} combats.")
