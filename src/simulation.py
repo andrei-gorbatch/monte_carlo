@@ -4,10 +4,88 @@ import random
 from typing import Tuple
 import pandas as pd
 import numpy as np
+import re
 
 from classes import martial, blaster
 from utils import calculate_group_hp
 from config import monte_carlo_iterations, input_data_path, output_data_path
+
+def validate_dice_cols(col):
+    """Function to validate that the dice columns are in the correct format"""
+    if not col.apply(lambda x: (re.match(r'^[\d\+]*d[\d\+]*(\+[\d\+]*d[\d\+]*)*$', str(x))) is not None or pd.isna(x)).all():
+       raise ValueError(f"Invalid damage: {col}")
+
+def test_excel_format() -> None:
+    """Function to test whether the excel file is in the correct format"""
+
+    try:
+        input_file = input_data_path/'character_info.xlsx'
+    except:
+        raise ValueError("Input file is missing or incorrectly named.")
+
+    try:
+        heroes_df = pd.read_excel(input_file, sheet_name="Heroes")
+    except:
+        raise ValueError("Heroes sheet is missing or incorrectly named.")
+
+    try:
+        monsters_df = pd.read_excel(input_file, sheet_name="Monsters")
+    except:
+        raise ValueError("Monsters sheet is missing or incorrectly named.")
+
+    all_characters = pd.concat([heroes_df, monsters_df], ignore_index=True)
+
+    expected_columns = ['Type', 'Name', 'HP', 'AC', 'str_save', 'dex_save', 'con_save', 'wis_save', 'cha_save', 'int_save', 'initiative_bonus', 'healer', 'heal_amount', 'number_of_attacks', 'attack_bonus', 'number_of_targets', 'spell_save_dc', 'targeted_save', 'saved_damage', 'attack_damage']
+
+    if not (all_characters.columns == expected_columns).all():
+        raise ValueError("Columns are missing or incorrectly named.")
+
+    if not (all_characters['Type'].isin(['Martial', 'Blaster'])).all():
+        raise ValueError("Type column contains unknown values.")
+
+    try:
+        all_characters['healer'].isin([True, False])
+    except:
+        raise ValueError("healer column contains unknown values.")
+
+    int_columns = ['HP', 'AC', 'str_save', 'dex_save', 'con_save', 'wis_save', 'cha_save', 'int_save', 'initiative_bonus', 'number_of_attacks', 'attack_bonus', 'number_of_targets', 'spell_save_dc']
+    try:
+        all_characters[int_columns].fillna(-1).astype(int)
+    except:
+        raise ValueError("Integer columns contain unknown values.")
+
+    dice_columns = ['heal_amount', 'attack_damage']
+    try:
+        all_characters[dice_columns].apply(validate_dice_cols)
+    except:
+        raise ValueError("heal_amount or attack_damage column contains unknown values.")
+
+    possible_saves = ['str', 'dex', 'con', 'wis', 'cha', 'int']
+    if not (all_characters['targeted_save'].isin(possible_saves) | all_characters['targeted_save'].isna()).all():
+        raise ValueError("targeted_save column contains unknown values.")
+
+    if not (all_characters['saved_damage'].isin([0, 0.5, 1]) | all_characters['saved_damage'].isna()).all():
+        raise ValueError("saved_damage column contains unknown values.")
+
+    # Check that Martial characters have number_of_attacks and attack_bonus
+    martial_characters = all_characters[all_characters['Type'] == 'Martial']
+    if not martial_characters['number_of_attacks'].notna().all() or not martial_characters['attack_bonus'].notna().all():
+        raise ValueError("Martial characters are missing number_of_attacks or attack_bonus.")
+    
+    # Check that Blaster characters have number_of_targets, spell_save_dc, targeted_save, saved_damage
+    blaster_characters = all_characters[all_characters['Type'] == 'Blaster']
+    if not blaster_characters['number_of_targets'].notna().all() or not blaster_characters['spell_save_dc'].notna().all() or not blaster_characters['targeted_save'].notna().all() or not blaster_characters['saved_damage'].notna().all():
+        raise ValueError("Blaster characters are missing number_of_targets, spell_save_dc, targeted_save, or saved_damage.")
+
+    # Check that Healers have heal_amount
+    healer_characters = all_characters[all_characters['healer'] == True]
+    if not healer_characters['heal_amount'].notna().all():
+        raise ValueError("Healers are missing heal_amount.")
+
+    # Check that all characters have necessary information
+    must_have_cols = ['Type', 'Name', 'HP', 'AC', 'str_save', 'dex_save', 'con_save', 'wis_save', 'cha_save', 'int_save', 'initiative_bonus', 'healer', 'attack_damage']
+    if not all_characters[must_have_cols].notna().all().all():
+        raise ValueError("Some characters are missing necessary information.")
 
 
 def ingest_creatures_from_excel() -> dict:
@@ -222,8 +300,13 @@ def data_analysis(characters_dict: dict, combats_df: pd.DataFrame) -> pd.DataFra
 
 def main():
     """Main"""
+    # Test excel format
+    test_excel_format()
+    # Ingest heroes and monsters from excel
     characters_dict = ingest_creatures_from_excel()
+    # Run Monte-Carlo simulation
     combats_df = monte_carlo(characters_dict)
+    # Do data analysis
     combats_df = data_analysis(characters_dict, combats_df)
     print(
         f"Ran {monte_carlo_iterations} combats.")
