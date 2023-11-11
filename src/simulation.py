@@ -5,6 +5,8 @@ from typing import Tuple
 import pandas as pd
 import numpy as np
 import re
+from pathlib import Path
+import os
 
 from classes import martial, blaster
 from utils import calculate_group_hp
@@ -15,12 +17,10 @@ def validate_dice_cols(col):
     if not col.apply(lambda x: (re.match(r'^[\d\+]*d[\d\+]*(\+[\d\+]*d[\d\+]*)*$', str(x))) is not None or pd.isna(x)).all():
        raise ValueError(f"Invalid damage: {col}")
 
-def test_excel_format() -> None:
+def validate_excel_file(input_file: Path = input_data_path/'character_info.xlsx') -> None:
     """Function to test whether the excel file is in the correct format"""
 
-    try:
-        input_file = input_data_path/'character_info.xlsx'
-    except:
+    if not os.path.exists(input_file):
         raise ValueError("Input file is missing or incorrectly named.")
 
     try:
@@ -82,10 +82,9 @@ def test_excel_format() -> None:
         raise ValueError("Some characters are missing necessary information.")
 
 
-def ingest_creatures_from_excel() -> dict:
+def ingest_creatures_from_excel(input_file: Path = input_data_path/'character_info.xlsx') -> dict:
     """Function to ingest heroes and monsters information from excel spreadsheet"""
 
-    input_file = input_data_path/'character_info.xlsx'
     heroes_df = pd.read_excel(input_file, sheet_name="Heroes")
     heroes_df.name = 'heroes'
     monsters_df = pd.read_excel(input_file, sheet_name="Monsters")
@@ -295,7 +294,7 @@ def data_analysis(characters_dict: dict, combats_df: pd.DataFrame) -> pd.DataFra
 def main():
     """Main"""
     # Test excel format
-    test_excel_format()
+    validate_excel_file()
     # Ingest heroes and monsters from excel
     characters_dict = ingest_creatures_from_excel()
     # Run Monte-Carlo simulation
