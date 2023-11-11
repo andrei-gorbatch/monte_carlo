@@ -13,6 +13,8 @@ monte_carlo_iterations = 1000
 ROOT_DIR = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 input_data_path = create_data_path(ROOT_DIR / 'data/upload_xlsx_here/')
 output_data_path = create_data_path(ROOT_DIR / 'data/simulation/')
+sample_data_path = create_data_path(ROOT_DIR / 'data/sample/')
+tests_path = create_data_path(ROOT_DIR / 'src/tests/')
 
 # Config for testing excel file format
 expected_columns = ['Type', 'Name', 'HP', 'AC', 'str_save', 'dex_save', 'con_save', 'wis_save', 'cha_save', 'int_save', 'initiative_bonus', 'healer', 'heal_amount', 'number_of_attacks', 'attack_bonus', 'number_of_targets', 'spell_save_dc', 'targeted_save', 'saved_damage', 'attack_damage']
