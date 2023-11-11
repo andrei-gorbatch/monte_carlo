@@ -68,10 +68,14 @@ class martial(character):
 
     def best_action(self, target_type):
         """Wrapper function that determines which action to take based on target"""
-        if target_type == "ally":
+
+        if target_type == "enemy":
+            return tuple(["roll_to_attack", self.roll_to_attack()])
+        elif target_type == "ally" and self.healer:
             return tuple(["heal", self.heal()])
         else:
-            return tuple(["roll_to_attack", self.roll_to_attack()])
+            raise ValueError("Invalid target type or target type is ally and character is not a healer")
+
 
 
 class blaster(character):
@@ -91,7 +95,9 @@ class blaster(character):
 
     def best_action(self, target_type):
         """Wrapper function that determines which action to take based on target"""
-        if target_type == "ally":
+        if target_type == "enemy":
+            return tuple(["spell_attack", self.spell_attack()])
+        elif target_type == "ally" and self.healer:
             return tuple(["heal", self.heal()])
         else:
-            return tuple(["spell_attack", self.spell_attack()])
+            raise ValueError("Invalid target type or target type is ally and character is not a healer")
