@@ -19,3 +19,4 @@
 2. Classes.py - definitions of python classes for characters. Currently two distinct classes are supported: "martial (hit with a stick)" and "blaster (hit with a fireball)"
 3. utils.py - small useful functions
 4. config.py - parameters of the simulation, such as number of iterations.
+5. run_tests.py - run all tests in src/tests folder
