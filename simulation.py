@@ -21,8 +21,10 @@ def validate_dice_cols(col):
 def validate_excel_file(input_file: Path = input_data_path/'character_info.xlsx') -> None:
     """Function to test whether the excel file is in the correct format"""
 
-    if not os.path.exists(input_file):
-        raise ValueError("Input file is missing or incorrectly named.")
+    try:
+        df = pd.read_excel(input_file)
+    except:
+        raise ValueError("Excel file is missing or has incorrect format.")
 
     try:
         heroes_df = pd.read_excel(input_file, sheet_name="Heroes")
@@ -292,12 +294,12 @@ def data_analysis(characters_dict: dict, combats_df: pd.DataFrame) -> pd.DataFra
     return combats_df
 
 
-def main():
+def main(input_file: Path = input_data_path/'character_info.xlsx'):
     """Main"""
     # Test excel format
-    validate_excel_file()
+    validate_excel_file(input_file)
     # Ingest heroes and monsters from excel
-    characters_dict = ingest_creatures_from_excel()
+    characters_dict = ingest_creatures_from_excel(input_file)
     # Run Monte-Carlo simulation
     combats_df = monte_carlo(characters_dict)
     # Do data analysis
