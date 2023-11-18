@@ -291,7 +291,14 @@ def data_analysis(characters_dict: dict, combats_df: pd.DataFrame) -> pd.DataFra
 
     # combats_df.to_csv(output_data_path/"combats_df.csv")
 
-    return combats_df
+    simulation_results = f"Ran {monte_carlo_iterations} combats.\n" + \
+    f"In {combats_df['TPK'].sum()/monte_carlo_iterations*100:.1f}% cases, all heroes died.\n" + \
+    f"In {combats_df['At least one hero died'].sum()/monte_carlo_iterations*100:.1f}% cases, at least one hero died.\n" + \
+    f"Average number of rounds: {combats_df['rounds'].mean():.1f}\n" 
+
+    print(simulation_results)
+
+    return simulation_results
 
 
 def main(input_file: Path = input_data_path/'character_info.xlsx'):
@@ -303,16 +310,7 @@ def main(input_file: Path = input_data_path/'character_info.xlsx'):
     # Run Monte-Carlo simulation
     combats_df = monte_carlo(characters_dict)
     # Do data analysis
-    combats_df = data_analysis(characters_dict, combats_df)
-    print(
-        f"Ran {monte_carlo_iterations} combats.")
-    print(f"In {combats_df['TPK'].sum()/monte_carlo_iterations*100:.1f}% cases, all heroes died.")
-    print(
-        f"In {combats_df['At least one hero died'].sum()/monte_carlo_iterations*100:.1f}% cases, at least one hero died.")
-
-    text = f"Ran {monte_carlo_iterations} combats.\n" + \
-    f"In {combats_df['TPK'].sum()/monte_carlo_iterations*100:.1f}% cases, all heroes died.\n" + \
-    f"In {combats_df['At least one hero died'].sum()/monte_carlo_iterations*100:.1f}% cases, at least one hero died.\n"
+    text = data_analysis(characters_dict, combats_df)
 
     return text
 
