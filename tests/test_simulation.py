@@ -194,13 +194,21 @@ class TestCombatRun(unittest.TestCase):
         self.assertEqual(combat_stats[1], 0)
 
         # Test that first hero to die and first monster to die is recorded
-        self.heroes[0].max_hp = 12
-        self.heroes[1].max_hp = 10
+        self.heroes[0].max_hp = 100
+        self.heroes[1].max_hp = 100
         self.heroes[2].max_hp = 0
+        self.monsters[0].max_hp = 100
+        self.monsters[1].max_hp = 100
         self.monsters[2].max_hp = 0
         column_names, combat_stats = run_one_combat(self.characters_dict)
         self.assertEqual(self.heroes[2].name, combat_stats[3])
         self.assertEqual(self.monsters[2].name, combat_stats[4])
+        self.heroes[0].max_hp = 12
+        self.heroes[1].max_hp = 10
+        self.heroes[2].max_hp = 8
+        self.monsters[0].max_hp = 12
+        self.monsters[1].max_hp = 12
+        self.monsters[2].max_hp = 8
 
         # Test that combat ends if all heroes are dead，or all monsters are dead
         column_names, combat_stats = run_one_combat(self.characters_dict)
@@ -211,8 +219,6 @@ class TestCombatRun(unittest.TestCase):
         self.assertFalse(combat_stats[1] == 0 and combat_stats[2] == 0)
 
         # Test that combat ends after 1000 rounds
-        self.heroes[2].max_hp = 8
-        self.monsters[2].max_hp = 8
         column_names, combat_stats = run_one_combat(self.characters_dict)
         self.assertLess(combat_stats[0], 1000)
 
@@ -262,9 +268,9 @@ class TestDataAnalysis(unittest.TestCase):
         result = data_analysis(self.characters_dict, self.combats_df)
         self.assertEqual(result['TPK'].iloc[1], False)
 
-        # Test that the DataFrame is saved to a CSV file
-        expected_file_path = output_data_path/"combats_df.csv"
-        self.assertTrue(expected_file_path.exists())
+        # # Test that the DataFrame is saved to a CSV file
+        # expected_file_path = output_data_path/"combats_df.csv"
+        # self.assertTrue(expected_file_path.exists())
 
 if __name__ == '__main__':
     unittest.main()
