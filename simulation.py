@@ -7,6 +7,7 @@ import numpy as np
 import re
 from pathlib import Path
 import os
+import sys
 
 from classes import martial, blaster
 from utils import calculate_group_hp
@@ -20,8 +21,10 @@ def validate_dice_cols(col):
 def validate_excel_file(input_file: Path = input_data_path/'character_info.xlsx') -> None:
     """Function to test whether the excel file is in the correct format"""
 
-    if not os.path.exists(input_file):
-        raise ValueError("Input file is missing or incorrectly named.")
+    try:
+        df = pd.read_excel(input_file)
+    except:
+        raise ValueError("Excel file is missing or has incorrect format.")
 
     try:
         heroes_df = pd.read_excel(input_file, sheet_name="Heroes")
@@ -286,26 +289,30 @@ def data_analysis(characters_dict: dict, combats_df: pd.DataFrame) -> pd.DataFra
 
     combats_df['TPK'] = np.where((combats_df['heroes_hp'] == 0), True, False)
 
-    combats_df.to_csv(output_data_path/"combats_df.csv")
+    # combats_df.to_csv(output_data_path/"combats_df.csv")
 
-    return combats_df
+    simulation_results = f"Ran {monte_carlo_iterations} combats.\n" + \
+    f"In {combats_df['TPK'].sum()/monte_carlo_iterations*100:.1f}% cases, all heroes died.\n" + \
+    f"In {combats_df['At least one hero died'].sum()/monte_carlo_iterations*100:.1f}% cases, at least one hero died.\n" + \
+    f"Average number of rounds: {combats_df['rounds'].mean():.1f}\n" 
+
+    print(simulation_results)
+
+    return simulation_results
 
 
-def main():
+def main(input_file: Path = input_data_path/'character_info.xlsx'):
     """Main"""
     # Test excel format
-    validate_excel_file()
+    validate_excel_file(input_file)
     # Ingest heroes and monsters from excel
-    characters_dict = ingest_creatures_from_excel()
+    characters_dict = ingest_creatures_from_excel(input_file)
     # Run Monte-Carlo simulation
     combats_df = monte_carlo(characters_dict)
     # Do data analysis
-    combats_df = data_analysis(characters_dict, combats_df)
-    print(
-        f"Ran {monte_carlo_iterations} combats.")
-    print(f"In {combats_df['TPK'].sum()/monte_carlo_iterations*100:.1f}% cases, all heroes died.")
-    print(
-        f"In {combats_df['At least one hero died'].sum()/monte_carlo_iterations*100:.1f}% cases, at least one hero died.")
+    text = data_analysis(characters_dict, combats_df)
+
+    return text
 
 
 if __name__ == "__main__":

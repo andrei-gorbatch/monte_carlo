@@ -1,0 +1,4 @@
+runtime: python311
+
+env_variables:
+  CLOUD_STORAGE_BUCKET: dnd-combat-simulator-bucket
