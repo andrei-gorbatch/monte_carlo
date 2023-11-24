@@ -71,9 +71,9 @@ def upload() -> str:
     uploaded_file_url = blob.public_url
 
     # Run the simulation
-    text = simulation.main(uploaded_file_url)
+    html_text = simulation.main(uploaded_file_url)
 
-    return text
+    return html_text
 
 
 @app.errorhandler(500)
@@ -88,6 +88,22 @@ def server_error(e: Exception | int) -> str:
         ),
         500,
     )
+
+# If python script throws an error, display it in the browser
+@app.errorhandler(Exception)
+def handle_exception(e: Exception) -> str:
+    return f"""
+    <html>
+    <head>
+        <title>DnD Combat Simulator</title>
+    </head>
+    <body>
+        <h1>DnD Combat Simulator</h1>
+        <h2>Oops, something went wrong!</h2>
+        <p>{e}</p>
+    </body>
+    </html>
+    """
 
 
 if __name__ == "__main__":
