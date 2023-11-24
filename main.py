@@ -12,11 +12,6 @@ app = Flask(__name__)
 # Configure this environment variable via app.yaml
 CLOUD_STORAGE_BUCKET = os.environ["CLOUD_STORAGE_BUCKET"]
 
-# @app.route("/")
-# def index():
-#     text = simulation.main()
-#     return text
-
 @app.route("/")
 def index() -> str:
 
@@ -30,10 +25,9 @@ def index() -> str:
     <body>
         <h1>DnD Combat Simulator</h1>
         <p>Upload a .xlsx file with two Sheets titled Heroes and Monsters, listing information about each character</p>
-        <p>For example:</p>
-        {example_html}
-        <p>Currently two types of characters are supported: Martials (e.g. Fighter) and Blasters (e.g. throw a fireball)</p>
         <p>Download the sample file <a href="https://storage.googleapis.com/{CLOUD_STORAGE_BUCKET}/sample/character_info.xlsx">here</a></p>
+        <p>Sample file contains explanations on how to input your character's information.</p>
+        <p>With any recommendations, please reach out to me on <a href="https://github.com/andrei-gorbatch/monte_carlo">github</a></p>
     </body>
     <body>
         <form method="POST" action="/upload" enctype="multipart/form-data">
