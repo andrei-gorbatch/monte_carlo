@@ -24,7 +24,7 @@ def validate_excel_file(input_file: Path = input_data_path/'character_info.xlsx'
     try:
         df = pd.read_excel(input_file)
     except:
-        raise ValueError("Excel file is missing or has incorrect format.")
+        raise ValueError("Input file has incorrect name or format. .xlsx file is expected.")
 
     try:
         heroes_df = pd.read_excel(input_file, sheet_name="Heroes")
@@ -52,7 +52,7 @@ def validate_excel_file(input_file: Path = input_data_path/'character_info.xlsx'
     try:
         all_characters[int_columns].fillna(-1).astype(int)
     except:
-        raise ValueError("Integer columns contain unknown values.")
+        raise ValueError("Numerical columns contain unknown values.")
 
     try:
         all_characters[dice_columns].apply(validate_dice_cols)
@@ -291,14 +291,35 @@ def data_analysis(characters_dict: dict, combats_df: pd.DataFrame) -> pd.DataFra
 
     # combats_df.to_csv(output_data_path/"combats_df.csv")
 
-    simulation_results = f"Ran {monte_carlo_iterations} combats.\n" + \
-    f"In {combats_df['TPK'].sum()/monte_carlo_iterations*100:.1f}% cases, all heroes died.\n" + \
-    f"In {combats_df['At least one hero died'].sum()/monte_carlo_iterations*100:.1f}% cases, at least one hero died.\n" + \
-    f"Average number of rounds: {combats_df['rounds'].mean():.1f}\n" 
+    return combats_df
+
+
+def df_to_html(combats_df: pd.DataFrame) -> str:
+    """Function to print output statistics and display them in html format"""
+
+    simulation_results = f"Simulation results:\n" + \
+    f"Chance of all heroes dying is {combats_df['TPK'].sum()/monte_carlo_iterations*100:.1f}%.\n" + \
+    f"Chance of at least one hero dying is {combats_df['At least one hero died'].sum()/monte_carlo_iterations*100:.1f}%.\n" + \
+    f"Combat on average lasts: {combats_df['rounds'].mean():.1f} rounds.\n" 
 
     print(simulation_results)
 
-    return simulation_results
+    simulation_results_html = f"""
+    <html>
+    <head>
+        <title>DnD Combat Simulator</title>
+    </head>
+    <body>
+        <h1>DnD Combat Simulator</h1>
+
+        <h2>Simulation results:</h2>
+        <p>Chance of all heroes dying is {combats_df['TPK'].sum()/monte_carlo_iterations*100:.1f}%.</p>
+        <p>Chance of at least one hero dying is {combats_df['At least one hero died'].sum()/monte_carlo_iterations*100:.1f}%.</p>
+        <p>Combat on average lasts: {combats_df['rounds'].mean():.1f} rounds.</p>
+    </body>
+    </html>
+    """
+
 
 
 def main(input_file: Path = input_data_path/'character_info.xlsx'):
@@ -310,9 +331,11 @@ def main(input_file: Path = input_data_path/'character_info.xlsx'):
     # Run Monte-Carlo simulation
     combats_df = monte_carlo(characters_dict)
     # Do data analysis
-    text = data_analysis(characters_dict, combats_df)
+    combats_df = data_analysis(characters_dict, combats_df)
+    # Print results
+    html_text = df_to_html(combats_df)
 
-    return text
+    return html_text
 
 
 if __name__ == "__main__":

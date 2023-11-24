@@ -71,9 +71,9 @@ def upload() -> str:
     uploaded_file_url = blob.public_url
 
     # Run the simulation
-    text = simulation.main(uploaded_file_url)
+    html_text = simulation.main(uploaded_file_url)
 
-    return text
+    return html_text
 
 
 @app.errorhandler(500)
