@@ -15,8 +15,6 @@ CLOUD_STORAGE_BUCKET = os.environ["CLOUD_STORAGE_BUCKET"]
 @app.route("/")
 def index() -> str:
 
-    example_html = pd.read_excel(f"https://storage.googleapis.com/{CLOUD_STORAGE_BUCKET}/sample/character_info.xlsx", sheet_name="Heroes").to_html()
-
     html_file = f"""
     <html>
     <head>
@@ -24,10 +22,15 @@ def index() -> str:
     </head>
     <body>
         <h1>DnD Combat Simulator</h1>
-        <p>Upload a .xlsx file with two Sheets titled Heroes and Monsters, listing information about each character</p>
-        <p>Download the sample file <a href="https://storage.googleapis.com/{CLOUD_STORAGE_BUCKET}/sample/character_info.xlsx">here</a></p>
+        <h2>Hello, welcome to the DnD Combat Simulator!</h2>
+        <p>Here you can upload a .xlsx file with information about your characters and monsters, 
+        and the simulator will run a Monte Carlo simulation to determine the probability of your party winning the fight.</p>
+        <p> It will also output some useful statistics, like expected length of the fight and whether any hero went down during the fight.</p>
+        <h2>How to use:</h2>
+        <p>Upload a .xlsx file with two Sheets titled Heroes and Monsters, listing information about each character.</p>
+        <p>You can download a sample file <a href="https://storage.googleapis.com/{CLOUD_STORAGE_BUCKET}/sample/character_info.xlsx">here</a>.</p>
         <p>Sample file contains explanations on how to input your character's information.</p>
-        <p>With any recommendations, please reach out to me on <a href="https://github.com/andrei-gorbatch/monte_carlo">github</a></p>
+        <p>With any questions or recommendations, please reach out to me on <a href="https://github.com/andrei-gorbatch/monte_carlo">github</a>.</p>
     </body>
     <body>
         <form method="POST" action="/upload" enctype="multipart/form-data">
