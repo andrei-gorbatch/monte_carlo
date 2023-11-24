@@ -89,6 +89,22 @@ def server_error(e: Exception | int) -> str:
         500,
     )
 
+# If python script throws an error, display it in the browser
+@app.errorhandler(Exception)
+def handle_exception(e: Exception) -> str:
+    return f"""
+    <html>
+    <head>
+        <title>DnD Combat Simulator</title>
+    </head>
+    <body>
+        <h1>DnD Combat Simulator</h1>
+        <h2>Oops, something went wrong!</h2>
+        <p>{e}</p>
+    </body>
+    </html>
+    """
+
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8080, debug=True)
